@@ -4,6 +4,7 @@
 #include <BLEServer.h>
 #include <BLE2902.h>
 
+#include "esp_mac.h"// For esp_read_mac
 #include "arduino.h"
 #include "BLEHelper.hh"
 
@@ -17,7 +18,13 @@ BLEHelper::BLEHelper()
 
 void BLEHelper::setup()
 {
-    BLEDevice::init("HRM1");
+    uint8_t mac[6];
+    esp_read_mac(mac, ESP_MAC_BT); // Read the Bluetooth MAC address
+
+    char deviceName[30];
+    sprintf(deviceName, "HRM_%02X%02X%02X%02X%02X%02X",mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+    BLEDevice::init(deviceName);
     BLEServer *pServer = BLEDevice::createServer();
     pServer->setCallbacks(this);
 
@@ -65,6 +72,10 @@ void BLEHelper::setup()
     hrmService->start();
   //  batteryLevelService->start();
     this->startAdvertising(pServer);
+
+    String macAddress = BLEDevice::getAddress().toString();
+    Serial.print("ESP32 BLE MAC Address: ");
+    Serial.println(macAddress.c_str());
 }
 
 void BLEHelper::onConnect(BLEServer *pServer)
